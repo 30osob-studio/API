@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 
@@ -9,17 +10,24 @@ app.get("/", (req, res) => {
 
 app.get("/repos", async (req, res) => {
   try {
-    const response = await fetch("https://api.github.com/orgs/30osob-studio/repos", {
-      headers: { "User-Agent": "node.js" }
-    });
+    const response = await fetch(
+      "https://api.github.com/orgs/30osob-studio/repos",
+      {
+        headers: {
+          "User-Agent": "node.js",
+          "Authorization": `token ${process.env.GITHUB_TOKEN}`
+        },
+      }
+    );
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: "Błąd pobierania danych z GitHuba" });
+      return res
+        .status(response.status)
+        .json({ error: "Błąd pobierania danych z GitHuba" });
     }
 
     const data = await response.json();
     res.json(data);
-
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
