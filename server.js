@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const fetch = require("node-fetch");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -15,15 +16,37 @@ app.get("/repos", async (req, res) => {
       {
         headers: {
           "User-Agent": "node.js",
-          "Authorization": `token ${process.env.API_TOKEN}`
+          "Authorization": `token ${process.env.API_TOKEN}`,
         },
       }
     );
 
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: "Błąd pobierania danych z GitHuba" });
+      return res.status(response.status).json({ error: "Błąd pobierania danych z GitHuba" });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Błąd:", error);
+    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
+  }
+});
+
+app.get("/owner", async (req, res) => {
+  try {
+    const response = await fetch(
+      "https://api.github.com/orgs/30osob-studio/members?role=admin",
+      {
+        headers: {
+          "User-Agent": "node.js",
+          "Authorization": `token ${process.env.API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Błąd pobierania członków" });
     }
 
     const data = await response.json();
