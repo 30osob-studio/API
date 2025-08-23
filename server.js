@@ -22,35 +22,28 @@ app.get("/repos", async (req, res) => {
     );
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: "Błąd pobierania danych z GitHuba" });
+      return res.status(response.status).json({ error: "Błąd pobierania repozytoriów organizacji" });
     }
 
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Błąd:", error);
-    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
-  }
-});
+    const repos = await response.json();
 
-app.get("/owner", async (req, res) => {
-  try {
-    const response = await fetch(
-      "https://api.github.com/orgs/30osob-studio/members?role=admin",
-      {
-        headers: {
-          "User-Agent": "node.js",
-          "Authorization": `token ${process.env.API_TOKEN}`,
-        },
-      }
+    const reposWithLanguages = await Promise.all(
+      repos.map(async (repo) => {
+        const langResponse = await fetch(
+          `https://api.github.com/repos/30osob-studio/${repo.name}/languages`,
+          {
+            headers: {
+              "User-Agent": "node.js",
+              "Authorization": `token ${process.env.API_TOKEN}`,
+            },
+          }
+        );
+        const languages = await langResponse.json();
+        return { ...repo, languages };
+      })
     );
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: "Błąd pobierania właściciela" });
-    }
-
-    const data = await response.json();
-    res.json(data[0]);
+    res.json(reposWithLanguages);
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
@@ -87,11 +80,52 @@ app.get("/owner/repos", async (req, res) => {
     );
 
     if (!reposResponse.ok) {
-      return res.status(reposResponse.status).json({ error: "Błąd pobierania repozytoriów" });
+      return res.status(reposResponse.status).json({ error: "Błąd pobierania repozytoriów właściciela" });
     }
 
     const repos = await reposResponse.json();
-    res.json(repos);
+
+    const reposWithLanguages = await Promise.all(
+      repos.map(async (repo) => {
+        const langResponse = await fetch(
+          `https://api.github.com/repos/${ownerLogin}/${repo.name}/languages`,
+          {
+            headers: {
+              "User-Agent": "node.js",
+              "Authorization": `token ${process.env.API_TOKEN}`,
+            },
+          }
+        );
+        const languages = await langResponse.json();
+        return { ...repo, languages };
+      })
+    );
+
+    res.json(reposWithLanguages);
+  } catch (error) {
+    console.error("Błąd:", error);
+    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
+  }
+});
+
+app.get("/owner", async (req, res) => {
+  try {
+    const response = await fetch(
+      "https://api.github.com/orgs/30osob-studio/members?role=admin",
+      {
+        headers: {
+          "User-Agent": "node.js",
+          "Authorization": `token ${process.env.API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Błąd pobierania właściciela" });
+    }
+
+    const data = await response.json();
+    res.json(data[0]);
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
