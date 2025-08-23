@@ -46,6 +46,24 @@ function mapLanguagesData(languages) {
   return languages;
 }
 
+function mapOrganizationData(org) {
+  return {
+    avatar_url: org.avatar_url,
+    description: org.description,
+    name: org.name,
+    location: org.location,
+    email: org.email,
+    twitter_username: org.twitter_username,
+    public_repos: org.public_repos,
+    html_url: org.html_url,
+  };
+}
+
+async function fetchOrganization(org) {
+  const orgData = await fetchJSON(`https://api.github.com/orgs/${org}`);
+  return mapOrganizationData(orgData);
+}
+
 async function fetchOrgReposWithLanguages(org) {
   const repos = await fetchJSON(`https://api.github.com/orgs/${org}/repos`);
   return Promise.all(
@@ -95,7 +113,9 @@ module.exports = {
   fetchOrgReposWithLanguages,
   fetchOwner,
   fetchOwnerReposWithLanguages,
+  fetchOrganization,
   mapUserData,
   mapRepoData,
   mapLanguagesData,
+  mapOrganizationData,
 };
