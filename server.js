@@ -15,7 +15,7 @@ app.get("/repos", async (req, res) => {
       {
         headers: {
           "User-Agent": "node.js",
-          "Authorization": `token ${process.env.GITHUB_TOKEN}`
+          "Authorization": `token ${process.env.API_TOKEN}`
         },
       }
     );
