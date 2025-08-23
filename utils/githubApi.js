@@ -16,6 +16,12 @@ function mapUserData(user) {
     avatar_url: user.avatar_url,
     html_url: user.html_url,
     name: user.name,
+    company: user.company,
+    location: user.location,
+    email: user.email,
+    bio: user.bio,
+    twitter_username: user.twitter_username,
+    public_repos: user.public_repos,
   };
 }
 
@@ -54,22 +60,18 @@ async function fetchOrgReposWithLanguages(org) {
 }
 
 async function fetchOwner(org) {
-  // First fetch admin members to get the owner's login
   const members = await fetchJSON(`https://api.github.com/orgs/${org}/members?role=admin`);
   if (!members || members.length === 0) {
     throw new Error('No admin members found for organization');
   }
 
-  // Get the owner's login from the first admin member
   const ownerLogin = members[0].login;
 
-  // Then fetch detailed owner information from the users endpoint
   const ownerDetails = await fetchJSON(`https://api.github.com/users/${ownerLogin}`);
   return mapUserData(ownerDetails);
 }
 
 async function fetchOwnerReposWithLanguages(org) {
-  // First get the owner to determine their login (same mechanism as fetchOwner)
   const members = await fetchJSON(`https://api.github.com/orgs/${org}/members?role=admin`);
   if (!members || members.length === 0) {
     throw new Error('No admin members found for organization');
@@ -77,7 +79,6 @@ async function fetchOwnerReposWithLanguages(org) {
 
   const ownerLogin = members[0].login;
 
-  // Then fetch repos for that owner
   const repos = await fetchJSON(`https://api.github.com/users/${ownerLogin}/repos`);
   return Promise.all(
     repos.map(async (repo) => {
