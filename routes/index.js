@@ -5,7 +5,6 @@ const ownerRouter = require("./owner");
 
 router.get("/", (req, res) => res.send("Hello World"));
 
-// Podłączanie podtras
 router.use("/repos", reposRouter);
 router.use("/owner", ownerRouter);
 

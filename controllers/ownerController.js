@@ -1,8 +1,24 @@
-const { fetchOwner, fetchOwnerReposWithLanguages } = require("../utils/githubApi");
+const { fetchOwner, fetchOwnerReposWithLanguages, mapUserData, mapRepoData, mapLanguagesData } = require("../utils/githubApi");
 
 const getOwner = async (req, res) => {
   try {
     const owner = await fetchOwner("30osob-studio");
+
+    const { fields } = req.query;
+
+    if (fields) {
+      const fieldList = fields.split(',').map(field => field.trim());
+      const filteredOwner = {};
+
+      fieldList.forEach(field => {
+        if (owner.hasOwnProperty(field)) {
+          filteredOwner[field] = owner[field];
+        }
+      });
+
+      return res.json(filteredOwner);
+    }
+
     res.json(owner);
   } catch (error) {
     console.error("Błąd:", error);
@@ -13,7 +29,54 @@ const getOwner = async (req, res) => {
 const getOwnerRepos = async (req, res) => {
   try {
     const repos = await fetchOwnerReposWithLanguages("30osob-studio");
-    res.json(repos);
+
+    const { fields, repoFields, languageFields } = req.query;
+
+    let filteredRepos = repos;
+
+    if (repoFields) {
+      const repoFieldList = repoFields.split(',').map(field => field.trim());
+      filteredRepos = repos.map(repo => {
+        const filteredRepo = {};
+        repoFieldList.forEach(field => {
+          if (field !== 'languages' && repo.hasOwnProperty(field)) {
+            filteredRepo[field] = repo[field];
+          }
+        });
+
+        if (repoFieldList.includes('languages')) {
+          if (languageFields) {
+            const languageFieldList = languageFields.split(',').map(field => field.trim());
+            const filteredLanguages = {};
+            languageFieldList.forEach(field => {
+              if (repo.languages && repo.languages.hasOwnProperty(field)) {
+                filteredLanguages[field] = repo.languages[field];
+              }
+            });
+            filteredRepo.languages = filteredLanguages;
+          } else {
+            filteredRepo.languages = repo.languages;
+          }
+        }
+
+        return filteredRepo;
+      });
+    }
+
+    if (fields && !repoFields) {
+      const fieldList = fields.split(',').map(field => field.trim());
+      filteredRepos = repos.map(repo => {
+        const filteredRepo = {};
+        fieldList.forEach(field => {
+          if (repo.hasOwnProperty(field)) {
+            filteredRepo[field] = repo[field];
+          }
+        });
+        return filteredRepo;
+      });
+    }
+
+    res.json(filteredRepos);
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
