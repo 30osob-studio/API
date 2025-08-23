@@ -46,11 +46,52 @@ app.get("/owner", async (req, res) => {
     );
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: "Błąd pobierania członków" });
+      return res.status(response.status).json({ error: "Błąd pobierania właściciela" });
     }
 
     const data = await response.json();
-    res.json(data);
+    res.json(data[0]);
+  } catch (error) {
+    console.error("Błąd:", error);
+    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
+  }
+});
+
+app.get("/owner/repos", async (req, res) => {
+  try {
+    const ownerResponse = await fetch(
+      "https://api.github.com/orgs/30osob-studio/members?role=admin",
+      {
+        headers: {
+          "User-Agent": "node.js",
+          "Authorization": `token ${process.env.API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!ownerResponse.ok) {
+      return res.status(ownerResponse.status).json({ error: "Błąd pobierania właściciela" });
+    }
+
+    const ownerData = await ownerResponse.json();
+    const ownerLogin = ownerData[0].login;
+
+    const reposResponse = await fetch(
+      `https://api.github.com/users/${ownerLogin}/repos`,
+      {
+        headers: {
+          "User-Agent": "node.js",
+          "Authorization": `token ${process.env.API_TOKEN}`,
+        },
+      }
+    );
+
+    if (!reposResponse.ok) {
+      return res.status(reposResponse.status).json({ error: "Błąd pobierania repozytoriów" });
+    }
+
+    const repos = await reposResponse.json();
+    res.json(repos);
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
