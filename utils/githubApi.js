@@ -13,9 +13,9 @@ async function fetchJSON(url) {
 
 function mapUserData(user) {
   return {
-   login: user.login,
     avatar_url: user.avatar_url,
     html_url: user.html_url,
+    name: user.name,
   };
 }
 
@@ -54,16 +54,34 @@ async function fetchOrgReposWithLanguages(org) {
 }
 
 async function fetchOwner(org) {
+  // First fetch admin members to get the owner's login
   const members = await fetchJSON(`https://api.github.com/orgs/${org}/members?role=admin`);
-  return mapUserData(members[0]);
+  if (!members || members.length === 0) {
+    throw new Error('No admin members found for organization');
+  }
+
+  // Get the owner's login from the first admin member
+  const ownerLogin = members[0].login;
+
+  // Then fetch detailed owner information from the users endpoint
+  const ownerDetails = await fetchJSON(`https://api.github.com/users/${ownerLogin}`);
+  return mapUserData(ownerDetails);
 }
 
 async function fetchOwnerReposWithLanguages(org) {
-  const owner = await fetchOwner(org);
-  const repos = await fetchJSON(`https://api.github.com/users/${owner.login}/repos`);
+  // First get the owner to determine their login (same mechanism as fetchOwner)
+  const members = await fetchJSON(`https://api.github.com/orgs/${org}/members?role=admin`);
+  if (!members || members.length === 0) {
+    throw new Error('No admin members found for organization');
+  }
+
+  const ownerLogin = members[0].login;
+
+  // Then fetch repos for that owner
+  const repos = await fetchJSON(`https://api.github.com/users/${ownerLogin}/repos`);
   return Promise.all(
     repos.map(async (repo) => {
-      const languages = await fetchJSON(`https://api.github.com/repos/${owner.login}/${repo.name}/languages`);
+      const languages = await fetchJSON(`https://api.github.com/repos/${ownerLogin}/${repo.name}/languages`);
       return {
         ...mapRepoData(repo),
         languages: mapLanguagesData(languages)
