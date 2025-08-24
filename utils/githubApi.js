@@ -109,10 +109,43 @@ async function fetchOwnerReposWithLanguages(org) {
   );
 }
 
+async function fetchOwnerReadme(org) {
+  const members = await fetchJSON(`https://api.github.com/orgs/${org}/members?role=admin`);
+  if (!members || members.length === 0) {
+    throw new Error('No admin members found for organization');
+  }
+
+  const ownerLogin = members[0].login;
+
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/${ownerLogin}/${ownerLogin}/refs/heads/main/README.md`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchOrgProfileReadme(org) {
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/${org}/.github/refs/heads/main/profile/README.md`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
 module.exports = {
   fetchOrgReposWithLanguages,
   fetchOwner,
   fetchOwnerReposWithLanguages,
+  fetchOwnerReadme,
+  fetchOrgProfileReadme,
   fetchOrganization,
   mapUserData,
   mapRepoData,

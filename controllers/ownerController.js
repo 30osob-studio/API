@@ -1,8 +1,14 @@
-const { fetchOwner, fetchOwnerReposWithLanguages, mapUserData, mapRepoData, mapLanguagesData } = require("../utils/githubApi");
+const { fetchOwner, fetchOwnerReposWithLanguages, fetchOwnerReadme, mapUserData, mapRepoData, mapLanguagesData } = require("../utils/githubApi");
 
 const getOwner = async (req, res) => {
   try {
     const owner = await fetchOwner("30osob-studio");
+    const readme = await fetchOwnerReadme("30osob-studio");
+
+    const ownerWithReadme = {
+      ...owner,
+      readme: readme
+    };
 
     const { fields } = req.query;
 
@@ -11,15 +17,15 @@ const getOwner = async (req, res) => {
       const filteredOwner = {};
 
       fieldList.forEach(field => {
-        if (owner.hasOwnProperty(field)) {
-          filteredOwner[field] = owner[field];
+        if (ownerWithReadme.hasOwnProperty(field)) {
+          filteredOwner[field] = ownerWithReadme[field];
         }
       });
 
       return res.json(filteredOwner);
     }
 
-    res.json(owner);
+    res.json(ownerWithReadme);
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
