@@ -38,6 +38,7 @@ function mapRepoData(repo) {
     open_issues_count: repo.open_issues_count,
     default_branch: repo.default_branch,
     license: repo.license,
+    contributors: repo.contributors || []
   };
 }
 
@@ -69,9 +70,13 @@ async function fetchOrgReposWithLanguages(org) {
   return Promise.all(
     repos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${org}/${repo.name}/languages`);
+      const readme = await fetchRepoReadme(org, repo.name);
+      const contributors = await fetchRepoContributors(org, repo.name);
       return {
         ...mapRepoData(repo),
-        languages: mapLanguagesData(languages)
+        languages: mapLanguagesData(languages),
+        readme: readme,
+        contributors: contributors
       };
     })
   );
@@ -101,18 +106,81 @@ async function fetchOwnerReposWithLanguages(org) {
   return Promise.all(
     repos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${ownerLogin}/${repo.name}/languages`);
+      const readme = await fetchRepoReadme(ownerLogin, repo.name);
       return {
         ...mapRepoData(repo),
-        languages: mapLanguagesData(languages)
+        languages: mapLanguagesData(languages),
+        readme: readme
       };
     })
   );
+}
+
+async function fetchOwnerReadme(org) {
+  const members = await fetchJSON(`https://api.github.com/orgs/${org}/members?role=admin`);
+  if (!members || members.length === 0) {
+    throw new Error('No admin members found for organization');
+  }
+
+  const ownerLogin = members[0].login;
+
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/${ownerLogin}/${ownerLogin}/refs/heads/main/README.md`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchOrgProfileReadme(org) {
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/${org}/.github/refs/heads/main/profile/README.md`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchRepoReadme(org, repoName) {
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/${org}/${repoName}/refs/heads/main/README.md`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchRepoContributors(org, repoName) {
+  try {
+    const contributors = await fetchJSON(`https://api.github.com/repos/${org}/${repoName}/contributors`);
+    return contributors.map(contributor => ({
+      login: contributor.login,
+      avatar_url: contributor.avatar_url,
+      html_url: contributor.html_url
+    }));
+  } catch (error) {
+    console.error(`Error fetching contributors for ${org}/${repoName}:`, error);
+    return [];
+  }
 }
 
 module.exports = {
   fetchOrgReposWithLanguages,
   fetchOwner,
   fetchOwnerReposWithLanguages,
+  fetchOwnerReadme,
+  fetchOrgProfileReadme,
+  fetchRepoReadme,
+  fetchRepoContributors,
   fetchOrganization,
   mapUserData,
   mapRepoData,
