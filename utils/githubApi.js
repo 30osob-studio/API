@@ -103,9 +103,11 @@ async function fetchOwnerReposWithLanguages(org) {
   return Promise.all(
     repos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${ownerLogin}/${repo.name}/languages`);
+      const readme = await fetchRepoReadme(ownerLogin, repo.name);
       return {
         ...mapRepoData(repo),
-        languages: mapLanguagesData(languages)
+        languages: mapLanguagesData(languages),
+        readme: readme
       };
     })
   );
