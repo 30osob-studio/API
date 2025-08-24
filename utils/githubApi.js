@@ -69,9 +69,11 @@ async function fetchOrgReposWithLanguages(org) {
   return Promise.all(
     repos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${org}/${repo.name}/languages`);
+      const readme = await fetchRepoReadme(org, repo.name);
       return {
         ...mapRepoData(repo),
-        languages: mapLanguagesData(languages)
+        languages: mapLanguagesData(languages),
+        readme: readme
       };
     })
   );
@@ -140,12 +142,25 @@ async function fetchOrgProfileReadme(org) {
   }
 }
 
+async function fetchRepoReadme(org, repoName) {
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/${org}/${repoName}/refs/heads/main/README.md`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
 module.exports = {
   fetchOrgReposWithLanguages,
   fetchOwner,
   fetchOwnerReposWithLanguages,
   fetchOwnerReadme,
   fetchOrgProfileReadme,
+  fetchRepoReadme,
   fetchOrganization,
   mapUserData,
   mapRepoData,

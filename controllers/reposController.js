@@ -13,7 +13,7 @@ const getOrgRepos = async (req, res) => {
       filteredRepos = reposWithLanguages.map(repo => {
         const filteredRepo = {};
         repoFieldList.forEach(field => {
-          if (field !== 'languages' && repo.hasOwnProperty(field)) {
+          if (field !== 'languages' && field !== 'readme' && repo.hasOwnProperty(field)) {
             filteredRepo[field] = repo[field];
           }
         });
@@ -31,6 +31,10 @@ const getOrgRepos = async (req, res) => {
           } else {
             filteredRepo.languages = repo.languages;
           }
+        }
+
+        if (repoFieldList.includes('readme')) {
+          filteredRepo.readme = repo.readme;
         }
 
         return filteredRepo;
