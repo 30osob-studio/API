@@ -9,7 +9,7 @@ router.get("/", async (req, res) => {
 
         const orgWithReadme = {
             ...orgData,
-            profile_readme: profileReadme
+            readme: profileReadme
         };
 
         const { fields } = req.query;
