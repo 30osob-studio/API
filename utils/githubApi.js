@@ -38,6 +38,7 @@ function mapRepoData(repo) {
     open_issues_count: repo.open_issues_count,
     default_branch: repo.default_branch,
     license: repo.license,
+    contributors: repo.contributors || []
   };
 }
 
@@ -70,10 +71,12 @@ async function fetchOrgReposWithLanguages(org) {
     repos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${org}/${repo.name}/languages`);
       const readme = await fetchRepoReadme(org, repo.name);
+      const contributors = await fetchRepoContributors(org, repo.name);
       return {
         ...mapRepoData(repo),
         languages: mapLanguagesData(languages),
-        readme: readme
+        readme: readme,
+        contributors: contributors
       };
     })
   );
@@ -156,6 +159,20 @@ async function fetchRepoReadme(org, repoName) {
   }
 }
 
+async function fetchRepoContributors(org, repoName) {
+  try {
+    const contributors = await fetchJSON(`https://api.github.com/repos/${org}/${repoName}/contributors`);
+    return contributors.map(contributor => ({
+      login: contributor.login,
+      avatar_url: contributor.avatar_url,
+      html_url: contributor.html_url
+    }));
+  } catch (error) {
+    console.error(`Error fetching contributors for ${org}/${repoName}:`, error);
+    return [];
+  }
+}
+
 module.exports = {
   fetchOrgReposWithLanguages,
   fetchOwner,
@@ -163,6 +180,7 @@ module.exports = {
   fetchOwnerReadme,
   fetchOrgProfileReadme,
   fetchRepoReadme,
+  fetchRepoContributors,
   fetchOrganization,
   mapUserData,
   mapRepoData,
