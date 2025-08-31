@@ -38,7 +38,8 @@ function mapRepoData(repo) {
     open_issues_count: repo.open_issues_count,
     default_branch: repo.default_branch,
     license: repo.license,
-    contributors: repo.contributors || []
+    contributors: repo.contributors || [],
+    repo_image: repo.repo_image || null
   };
 }
 
@@ -72,8 +73,9 @@ async function fetchOrgReposWithLanguages(org) {
       const languages = await fetchJSON(`https://api.github.com/repos/${org}/${repo.name}/languages`);
       const readme = await fetchRepoReadme(org, repo.name);
       const contributors = await fetchRepoContributors(org, repo.name);
+      const repo_image = extractFirstLineFromReadme(readme);
       return {
-        ...mapRepoData(repo),
+        ...mapRepoData({ ...repo, repo_image }),
         languages: mapLanguagesData(languages),
         readme: readme,
         contributors: contributors
@@ -107,8 +109,9 @@ async function fetchOwnerReposWithLanguages(org) {
     repos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${ownerLogin}/${repo.name}/languages`);
       const readme = await fetchRepoReadme(ownerLogin, repo.name);
+      const repo_image = extractFirstLineFromReadme(readme);
       return {
-        ...mapRepoData(repo),
+        ...mapRepoData({ ...repo, repo_image }),
         languages: mapLanguagesData(languages),
         readme: readme
       };
@@ -173,6 +176,22 @@ async function fetchRepoContributors(org, repoName) {
   }
 }
 
+function extractFirstLineFromReadme(readme) {
+  if (!readme) return null;
+  const lines = readme.split('\n');
+  const firstLine = lines[0].trim();
+
+  // Sprawdź czy pierwsza linia zawiera obrazek markdown
+  const imageRegex = /!\[.*?\]\((https?:\/\/[^\s)]+)\)/;
+  const match = firstLine.match(imageRegex);
+
+  if (match) {
+    return match[1]; // Zwróć tylko URL obrazka
+  }
+
+  return firstLine || null;
+}
+
 module.exports = {
   fetchOrgReposWithLanguages,
   fetchOwner,
@@ -186,4 +205,5 @@ module.exports = {
   mapRepoData,
   mapLanguagesData,
   mapOrganizationData,
+  extractFirstLineFromReadme,
 };

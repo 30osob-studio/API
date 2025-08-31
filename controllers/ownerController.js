@@ -45,7 +45,7 @@ const getOwnerRepos = async (req, res) => {
       filteredRepos = repos.map(repo => {
         const filteredRepo = {};
         repoFieldList.forEach(field => {
-          if (field !== 'languages' && field !== 'readme' && repo.hasOwnProperty(field)) {
+          if (field !== 'languages' && field !== 'readme' && field !== 'repo_image' && repo.hasOwnProperty(field)) {
             filteredRepo[field] = repo[field];
           }
         });
@@ -67,6 +67,10 @@ const getOwnerRepos = async (req, res) => {
 
         if (repoFieldList.includes('readme')) {
           filteredRepo.readme = repo.readme;
+        }
+
+        if (repoFieldList.includes('repo_image')) {
+          filteredRepo.repo_image = repo.repo_image;
         }
 
         return filteredRepo;
