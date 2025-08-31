@@ -6,7 +6,9 @@ const getOrgRepos = async (req, res) => {
 
     const { fields, repoFields, languageFields } = req.query;
 
-    let filteredRepos = reposWithLanguages;
+    let filteredRepos = reposWithLanguages.filter(repo =>
+      repo.topics && Array.isArray(repo.topics) && repo.topics.length > 0
+    );
 
     if (repoFields) {
       const repoFieldList = repoFields.split(',').map(field => field.trim());

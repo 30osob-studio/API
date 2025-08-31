@@ -38,7 +38,9 @@ const getOwnerRepos = async (req, res) => {
 
     const { fields, repoFields, languageFields } = req.query;
 
-    let filteredRepos = repos;
+    let filteredRepos = repos.filter(repo =>
+      repo.topics && Array.isArray(repo.topics) && repo.topics.length > 0
+    );
 
     if (repoFields) {
       const repoFieldList = repoFields.split(',').map(field => field.trim());
