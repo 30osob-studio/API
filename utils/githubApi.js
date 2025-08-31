@@ -199,11 +199,32 @@ async function fetchRepoReadme(org, repoName) {
 async function fetchRepoContributors(org, repoName) {
   try {
     const contributors = await fetchJSON(`https://api.github.com/repos/${org}/${repoName}/contributors`);
-    return contributors.map(contributor => ({
-      login: contributor.login,
-      avatar_url: contributor.avatar_url,
-      html_url: contributor.html_url
-    }));
+
+    // Fetch detailed user information for each contributor to get their name
+    const contributorsWithDetails = await Promise.all(
+      contributors.map(async (contributor) => {
+        try {
+          const userDetails = await fetchJSON(`https://api.github.com/users/${contributor.login}`);
+          return {
+            login: contributor.login,
+            name: userDetails.name || contributor.login, // Use login as fallback if name is not available
+            avatar_url: contributor.avatar_url,
+            html_url: contributor.html_url
+          };
+        } catch (error) {
+          console.error(`Error fetching details for contributor ${contributor.login}:`, error);
+          // Return basic info if detailed fetch fails
+          return {
+            login: contributor.login,
+            name: contributor.login, // Use login as fallback
+            avatar_url: contributor.avatar_url,
+            html_url: contributor.html_url
+          };
+        }
+      })
+    );
+
+    return contributorsWithDetails;
   } catch (error) {
     console.error(`Error fetching contributors for ${org}/${repoName}:`, error);
     return [];
