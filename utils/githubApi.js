@@ -97,7 +97,6 @@ async function fetchOrganization(org) {
 
 async function fetchOrgReposWithLanguages(org) {
   const repos = await fetchJSON(`https://api.github.com/orgs/${org}/repos`);
-  // Filter out private repositories and .github repos
   const publicRepos = repos.filter(repo => !repo.private && repo.name !== '.github');
 
   return Promise.all(
@@ -137,7 +136,6 @@ async function fetchOwnerReposWithLanguages(org) {
   const ownerLogin = members[0].login;
 
   const repos = await fetchJSON(`https://api.github.com/users/${ownerLogin}/repos`);
-  // Filter out private repositories, .github repos, and repos matching owner login
   const publicRepos = repos.filter(repo =>
     !repo.private &&
     repo.name !== '.github' &&
