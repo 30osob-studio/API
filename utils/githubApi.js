@@ -96,8 +96,11 @@ async function fetchOrganization(org) {
 
 async function fetchOrgReposWithLanguages(org) {
   const repos = await fetchJSON(`https://api.github.com/orgs/${org}/repos`);
+  // Filter out private repositories
+  const publicRepos = repos.filter(repo => !repo.private);
+
   return Promise.all(
-    repos.map(async (repo) => {
+    publicRepos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${org}/${repo.name}/languages`);
       const readme = await fetchRepoReadme(org, repo.name);
       const contributors = await fetchRepoContributors(org, repo.name);
@@ -133,8 +136,11 @@ async function fetchOwnerReposWithLanguages(org) {
   const ownerLogin = members[0].login;
 
   const repos = await fetchJSON(`https://api.github.com/users/${ownerLogin}/repos`);
+  // Filter out private repositories
+  const publicRepos = repos.filter(repo => !repo.private);
+
   return Promise.all(
-    repos.map(async (repo) => {
+    publicRepos.map(async (repo) => {
       const languages = await fetchJSON(`https://api.github.com/repos/${ownerLogin}/${repo.name}/languages`);
       const readme = await fetchRepoReadme(ownerLogin, repo.name);
       const repo_image = extractFirstLineFromReadme(readme);
