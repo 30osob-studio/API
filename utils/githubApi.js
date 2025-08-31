@@ -5,6 +5,36 @@ const headers = {
   "Authorization": `token ${process.env.API_TOKEN}`,
 };
 
+function convertEmptyToNull(obj) {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+
+  if (typeof obj === 'string') {
+    return obj.trim() === '' ? null : obj;
+  }
+
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) {
+      return null;
+    }
+    return obj.map(item => convertEmptyToNull(item));
+  }
+
+  if (typeof obj === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const convertedValue = convertEmptyToNull(value);
+      if (convertedValue !== null) {
+        result[key] = convertedValue;
+      }
+    }
+    return Object.keys(result).length === 0 ? null : result;
+  }
+
+  return obj;
+}
+
 async function fetchJSON(url) {
   const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`Fetch error: ${res.status}`);
@@ -12,7 +42,7 @@ async function fetchJSON(url) {
 }
 
 function mapUserData(user) {
-  return {
+  const userData = {
     avatar_url: user.avatar_url,
     html_url: user.html_url,
     name: user.name,
@@ -23,6 +53,8 @@ function mapUserData(user) {
     twitter_username: user.twitter_username,
     public_repos: user.public_repos,
   };
+
+  return convertEmptyToNull(userData);
 }
 
 function mapRepoData(repo) {
@@ -53,7 +85,7 @@ function mapRepoData(repo) {
     }
   }
 
-  return {
+  const repoData = {
     name: repo.name,
     html_url: repo.html_url,
     description: repo.description,
@@ -70,12 +102,14 @@ function mapRepoData(repo) {
     contributors: repo.contributors || [],
     repo_image: repo.repo_image || null
   };
+
+  return convertEmptyToNull(repoData);
 }
 
 
 function mapLanguagesData(languages) {
   if (!languages || Object.keys(languages).length === 0) {
-    return {};
+    return null;
   }
 
   const totalBytes = Object.values(languages).reduce((sum, bytes) => sum + bytes, 0);
@@ -87,11 +121,11 @@ function mapLanguagesData(languages) {
     result[language] = parseFloat(percentage);
   });
 
-  return result;
+  return convertEmptyToNull(result);
 }
 
 function mapOrganizationData(org) {
-  return {
+  const orgData = {
     avatar_url: org.avatar_url,
     description: org.description,
     name: org.name,
@@ -101,6 +135,8 @@ function mapOrganizationData(org) {
     public_repos: org.public_repos,
     html_url: org.html_url,
   };
+
+  return convertEmptyToNull(orgData);
 }
 
 async function fetchOrganization(org) {
@@ -238,10 +274,10 @@ async function fetchRepoContributors(org, repoName) {
       })
     );
 
-    return contributorsWithDetails;
+    return convertEmptyToNull(contributorsWithDetails);
   } catch (error) {
     console.error(`Error fetching contributors for ${org}/${repoName}:`, error);
-    return [];
+    return null;
   }
 }
 
@@ -274,4 +310,5 @@ module.exports = {
   mapLanguagesData,
   mapOrganizationData,
   extractFirstLineFromReadme,
+  convertEmptyToNull,
 };

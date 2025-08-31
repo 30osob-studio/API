@@ -1,4 +1,4 @@
-const { fetchOrgReposWithLanguages, mapRepoData, mapLanguagesData } = require("../utils/githubApi");
+const { fetchOrgReposWithLanguages, mapRepoData, mapLanguagesData, convertEmptyToNull } = require("../utils/githubApi");
 
 const getOrgRepos = async (req, res) => {
   try {
@@ -64,7 +64,7 @@ const getOrgRepos = async (req, res) => {
       });
     }
 
-    res.json(filteredRepos);
+    res.json(convertEmptyToNull(filteredRepos));
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });

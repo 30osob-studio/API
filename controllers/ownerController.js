@@ -1,4 +1,4 @@
-const { fetchOwner, fetchOwnerReposWithLanguages, fetchOwnerReadme, mapUserData, mapRepoData, mapLanguagesData } = require("../utils/githubApi");
+const { fetchOwner, fetchOwnerReposWithLanguages, fetchOwnerReadme, mapUserData, mapRepoData, mapLanguagesData, convertEmptyToNull } = require("../utils/githubApi");
 
 const getOwner = async (req, res) => {
   try {
@@ -22,10 +22,10 @@ const getOwner = async (req, res) => {
         }
       });
 
-      return res.json(filteredOwner);
+      return res.json(convertEmptyToNull(filteredOwner));
     }
 
-    res.json(ownerWithReadme);
+    res.json(convertEmptyToNull(ownerWithReadme));
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
@@ -92,7 +92,7 @@ const getOwnerRepos = async (req, res) => {
       });
     }
 
-    res.json(filteredRepos);
+    res.json(convertEmptyToNull(filteredRepos));
   } catch (error) {
     console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
