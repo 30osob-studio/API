@@ -74,7 +74,20 @@ function mapRepoData(repo) {
 
 
 function mapLanguagesData(languages) {
-  return languages;
+  if (!languages || Object.keys(languages).length === 0) {
+    return {};
+  }
+
+  const totalBytes = Object.values(languages).reduce((sum, bytes) => sum + bytes, 0);
+
+  const result = {};
+
+  Object.entries(languages).forEach(([language, bytes]) => {
+    const percentage = ((bytes / totalBytes) * 100).toFixed(1);
+    result[language] = parseFloat(percentage);
+  });
+
+  return result;
 }
 
 function mapOrganizationData(org) {
