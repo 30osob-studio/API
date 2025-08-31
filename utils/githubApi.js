@@ -62,7 +62,7 @@ function mapRepoData(repo) {
     pushed_at: repo.pushed_at,
     last_change: lastChange,
     topics: repo.topics,
-    homepage: repo.homepage,
+    homepage: repo.homepage && repo.homepage.trim() !== '' ? repo.homepage : null,
     open_issues_count: repo.open_issues_count,
     default_branch: repo.default_branch,
     license: repo.license,
