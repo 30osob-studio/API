@@ -26,6 +26,33 @@ function mapUserData(user) {
 }
 
 function mapRepoData(repo) {
+  const pushedAt = repo.pushed_at ? new Date(repo.pushed_at) : null;
+  const updatedAt = repo.updated_at ? new Date(repo.updated_at) : null;
+
+  let lastChange = null;
+  if (pushedAt || updatedAt) {
+    const mostRecent = pushedAt && updatedAt
+      ? (pushedAt > updatedAt ? pushedAt : updatedAt)
+      : (pushedAt || updatedAt);
+
+    const now = new Date();
+    const diffInMs = now - mostRecent;
+    const diffInSeconds = Math.floor(diffInMs / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays > 0) {
+      lastChange = `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+      lastChange = `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else if (diffInMinutes > 0) {
+      lastChange = `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    } else {
+      lastChange = `${diffInSeconds} second${diffInSeconds > 1 ? 's' : ''} ago`;
+    }
+  }
+
   return {
     name: repo.name,
     html_url: repo.html_url,
@@ -33,6 +60,7 @@ function mapRepoData(repo) {
     created_at: repo.created_at,
     updated_at: repo.updated_at,
     pushed_at: repo.pushed_at,
+    last_change: lastChange,
     topics: repo.topics,
     homepage: repo.homepage,
     open_issues_count: repo.open_issues_count,
@@ -181,12 +209,11 @@ function extractFirstLineFromReadme(readme) {
   const lines = readme.split('\n');
   const firstLine = lines[0].trim();
 
-  // Sprawdź czy pierwsza linia zawiera obrazek markdown
   const imageRegex = /!\[.*?\]\((https?:\/\/[^\s)]+)\)/;
   const match = firstLine.match(imageRegex);
 
   if (match) {
-    return match[1]; // Zwróć tylko URL obrazka
+    return match[1];
   }
 
   return firstLine || null;
