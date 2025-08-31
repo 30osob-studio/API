@@ -1,9 +1,10 @@
-const { fetchOwner, fetchOwnerReposWithLanguages, fetchOwnerReadme, mapUserData, mapRepoData, mapLanguagesData, convertEmptyToNull } = require("../utils/githubApi");
+const { convertEmptyToNull } = require("../utils/githubApi");
+const dataCache = require("../utils/cache");
 
 const getOwner = async (req, res) => {
   try {
-    const owner = await fetchOwner("30osob-studio");
-    const readme = await fetchOwnerReadme("30osob-studio");
+    const owner = await dataCache.getOwner("30osob-studio");
+    const readme = await dataCache.getOwnerReadme("30osob-studio");
 
     const ownerWithReadme = {
       ...owner,
@@ -27,14 +28,13 @@ const getOwner = async (req, res) => {
 
     res.json(convertEmptyToNull(ownerWithReadme));
   } catch (error) {
-    console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
   }
 };
 
 const getOwnerRepos = async (req, res) => {
   try {
-    const repos = await fetchOwnerReposWithLanguages("30osob-studio");
+    const repos = await dataCache.getOwnerRepos("30osob-studio");
 
     const { fields, repoFields, languageFields } = req.query;
 
@@ -94,7 +94,6 @@ const getOwnerRepos = async (req, res) => {
 
     res.json(convertEmptyToNull(filteredRepos));
   } catch (error) {
-    console.error("Błąd:", error);
     res.status(500).json({ error: "Wewnętrzny błąd serwera" });
   }
 };

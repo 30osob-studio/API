@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { fetchOrganization, fetchOrgProfileReadme, convertEmptyToNull } = require("../utils/githubApi");
+const { convertEmptyToNull } = require("../utils/githubApi");
+const dataCache = require("../utils/cache");
 
 router.get("/", async (req, res) => {
     try {
-        const orgData = await fetchOrganization("30osob-studio");
-        const profileReadme = await fetchOrgProfileReadme("30osob-studio");
+        const orgData = await dataCache.getOrganization("30osob-studio");
+        const profileReadme = await dataCache.getOrgProfileReadme("30osob-studio");
 
         const orgWithReadme = {
             ...orgData,
@@ -29,7 +30,6 @@ router.get("/", async (req, res) => {
 
         res.json(convertEmptyToNull(orgWithReadme));
     } catch (error) {
-        console.error("Error fetching organization data:", error);
         res.status(500).json({ error: "Failed to fetch organization data" });
     }
 });

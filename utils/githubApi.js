@@ -5,6 +5,67 @@ const headers = {
   "Authorization": `token ${process.env.API_TOKEN}`,
 };
 
+// Rate limiting and retry configuration
+const RATE_LIMIT_DELAY = 1000; // 1 second delay between requests
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
+let lastRequestTime = 0;
+
+// Rate limiting function
+function rateLimit() {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+
+  if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
+    const delay = RATE_LIMIT_DELAY - timeSinceLastRequest;
+    return new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  lastRequestTime = now;
+  return Promise.resolve();
+}
+
+// Retry function with exponential backoff
+async function fetchWithRetry(url, retries = MAX_RETRIES) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      await rateLimit();
+      const res = await fetch(url, { headers });
+
+      if (res.status === 403) {
+        // Rate limit exceeded
+        const retryAfter = res.headers.get('Retry-After') || 60;
+        console.log(`Rate limit exceeded. Waiting ${retryAfter} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        continue;
+      }
+
+      if (res.status === 429) {
+        // Too many requests
+        const retryAfter = res.headers.get('Retry-After') || 60;
+        console.log(`Too many requests. Waiting ${retryAfter} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        continue;
+      }
+
+      if (!res.ok) {
+        throw new Error(`Fetch error: ${res.status} - ${res.statusText}`);
+      }
+
+      return await res.json();
+
+    } catch (error) {
+      if (i === retries) {
+        throw error;
+      }
+
+      console.log(`Attempt ${i + 1} failed: ${error.message}. Retrying in ${RETRY_DELAY * (i + 1)}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (i + 1)));
+    }
+  }
+}
+
 function convertEmptyToNull(obj) {
   if (obj === null || obj === undefined) {
     return null;
@@ -36,9 +97,7 @@ function convertEmptyToNull(obj) {
 }
 
 async function fetchJSON(url) {
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`Fetch error: ${res.status}`);
-  return res.json();
+  return await fetchWithRetry(url);
 }
 
 function mapUserData(user) {
@@ -52,6 +111,14 @@ function mapUserData(user) {
     bio: user.bio,
     twitter_username: user.twitter_username,
     public_repos: user.public_repos,
+    // Dynamiczne pola dla czasu rzeczywistego
+    current_timestamp: new Date().toISOString(),
+    live_request_time: new Date().toLocaleTimeString(),
+    live_request_date: new Date().toLocaleDateString(),
+    live_unix_timestamp: Date.now(),
+    // Dodatkowe dynamiczne informacje
+    live_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    live_locale: Intl.DateTimeFormat().resolvedOptions().locale,
   };
 
   return convertEmptyToNull(userData);
@@ -62,6 +129,11 @@ function mapRepoData(repo) {
   const updatedAt = repo.updated_at ? new Date(repo.updated_at) : null;
 
   let lastChange = null;
+  let secondsElapsed = null;
+  let millisecondsElapsed = null;
+  let timeFormatted = null;
+  let ageInWords = null;
+
   if (pushedAt || updatedAt) {
     const mostRecent = pushedAt && updatedAt
       ? (pushedAt > updatedAt ? pushedAt : updatedAt)
@@ -73,6 +145,24 @@ function mapRepoData(repo) {
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
+
+    // Zapisz dokładną liczbę sekund dla dynamicznego wyświetlania
+    secondsElapsed = diffInSeconds;
+    millisecondsElapsed = diffInMs;
+
+    // Dynamiczny format czasu
+    timeFormatted = `${diffInDays.toString().padStart(2, '0')}:${(diffInHours % 24).toString().padStart(2, '0')}:${(diffInMinutes % 60).toString().padStart(2, '0')}:${(diffInSeconds % 60).toString().padStart(2, '0')}`;
+
+    // Dynamiczny opis wieku
+    if (diffInDays > 0) {
+      ageInWords = `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+      ageInWords = `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else if (diffInMinutes > 0) {
+      ageInWords = `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    } else {
+      ageInWords = `${diffInSeconds} second${diffInSeconds > 1 ? 's' : ''} ago`;
+    }
 
     if (diffInDays > 0) {
       lastChange = `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
@@ -93,6 +183,17 @@ function mapRepoData(repo) {
     updated_at: repo.updated_at,
     pushed_at: repo.pushed_at,
     last_change: lastChange,
+    // Dynamiczne pola dla czasu rzeczywistego
+    live_seconds_elapsed: secondsElapsed,
+    live_milliseconds_elapsed: millisecondsElapsed,
+    live_time_formatted: timeFormatted,
+    live_age_in_words: ageInWords,
+    // Aktualny timestamp dla pełnej dynamiki
+    current_timestamp: new Date().toISOString(),
+    // Dodatkowe dynamiczne pola
+    live_request_time: new Date().toLocaleTimeString(),
+    live_request_date: new Date().toLocaleDateString(),
+    live_unix_timestamp: Date.now(),
     topics: repo.topics,
     homepage: repo.homepage && repo.homepage.trim() !== '' ? repo.homepage : null,
     open_issues_count: repo.open_issues_count,
@@ -134,6 +235,14 @@ function mapOrganizationData(org) {
     twitter_username: org.twitter_username,
     public_repos: org.public_repos,
     html_url: org.html_url,
+    // Dynamiczne pola dla czasu rzeczywistego
+    current_timestamp: new Date().toISOString(),
+    live_request_time: new Date().toLocaleTimeString(),
+    live_request_date: new Date().toLocaleDateString(),
+    live_unix_timestamp: Date.now(),
+    // Dodatkowe dynamiczne informacje
+    live_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    live_locale: Intl.DateTimeFormat().resolvedOptions().locale,
   };
 
   return convertEmptyToNull(orgData);
@@ -263,7 +372,6 @@ async function fetchRepoContributors(org, repoName) {
             html_url: contributor.html_url
           };
         } catch (error) {
-          console.error(`Error fetching details for contributor ${contributor.login}:`, error);
           return {
             login: contributor.login,
             name: contributor.login,
@@ -276,7 +384,6 @@ async function fetchRepoContributors(org, repoName) {
 
     return convertEmptyToNull(contributorsWithDetails);
   } catch (error) {
-    console.error(`Error fetching contributors for ${org}/${repoName}:`, error);
     return null;
   }
 }
