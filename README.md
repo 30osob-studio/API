@@ -1,1 +1,1 @@
-![alt]([https://i.pinimg.com/736x/e5/eb/15/e5eb155261e17facea29b77136c299e4.jpg](https://media.discordapp.net/attachments/1090971890945904694/1411778809253859398/Bez_tytuu.png?ex=68b5e4f9&is=68b49379&hm=e27816f0f90c476793035b2277921c8d1517411018fcdea69a7382bcaa401ab6&=&format=webp&quality=lossless&width=930&height=930))
+![alt](https://media.discordapp.net/attachments/1090971890945904694/1411778809253859398/Bez_tytuu.png?ex=68b5e4f9&is=68b49379&hm=e27816f0f90c476793035b2277921c8d1517411018fcdea69a7382bcaa401ab6&=&format=webp&quality=lossless&width=930&height=930)
